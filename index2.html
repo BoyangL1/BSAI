@@ -31,7 +31,7 @@
 
   textarea {
     width: 100%;
-    height: 150px;
+    height: 40%;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -39,7 +39,7 @@
     margin: 10px 0;
     resize: none;
     font-family: 'Microsoft YaHei', sans-serif;
-    font-size: 20px;
+    font-size: 30px;
     /* Set the font to Microsoft YaHei, with a fallback to sans-serif */
   }
 
@@ -114,16 +114,7 @@
     let downloadButton = document.getElementById("downloadButton");
     let dataChunks = [];
     let recorder;
-
-    // Utility to handle different browser implementations
-    function setStreamSrc(videoElem, stream) {
-      if ("srcObject" in videoElem) {
-        videoElem.srcObject = stream;
-      } else {
-        // Older browsers may not have srcObject
-        videoElem.src = window.URL.createObjectURL(stream);
-      }
-    }
+    
     // 开始录制
     function startRecording(stream, lengthInMS) {
       recorder = new MediaRecorder(stream);
