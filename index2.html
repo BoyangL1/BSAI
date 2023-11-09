@@ -5,26 +5,104 @@
   <meta charset="UTF-8">
   <title>html5调用摄像头录制视频</title>
 </head>
+<style>
+  /* Base styles */
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+  }
+
+  .video {
+    max-width: 100%;
+    /* Ensures that video doesn't overflow the screen */
+    height: auto;
+    /* Maintain aspect ratio */
+    margin-bottom: 10px;
+    /* Spacing between videos */
+  }
+
+  video {
+    width: 100%;
+    /* Make video take the full width of its container */
+    height: auto;
+    /* Maintain aspect ratio */
+  }
+
+  textarea {
+    width: 100%;
+    height: 150px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f8f8f8;
+    margin: 10px 0;
+    resize: none;
+    font-family: 'Microsoft YaHei', sans-serif;
+    /* Set the font to Microsoft YaHei, with a fallback to sans-serif */
+  }
+
+
+  button {
+    padding: 10px 15px;
+    /* Larger padding for easier tap targets on mobile */
+    font-size: 16px;
+    /* Larger font size for better readability */
+    margin-right: 5px;
+    /* Spacing between buttons */
+    cursor: pointer;
+    /* Cursor pointer to indicate clickable */
+    border: none;
+    /* Remove default border */
+    border-radius: 5px;
+    /* Rounded corners for aesthetics */
+  }
+
+  .button-disabled {
+    background-color: #ccc;
+    /* Gray background to indicate it's disabled */
+    color: #666;
+    /* Darker text color */
+    pointer-events: none;
+    /* Prevents any mouse events like hover, click etc. */
+    cursor: default;
+    /* Default cursor to indicate it's not clickable */
+  }
+
+  /* Responsive styles */
+  @media (max-width: 600px) {
+    textarea {
+      height: 200px;
+      /* Larger height for easier interaction on mobile */
+      font-size: 16px;
+      /* Larger font size for better readability */
+    }
+
+    button {
+      width: 100%;
+      /* Full width buttons for easier interaction */
+      margin-bottom: 10px;
+      /* Spacing after the button */
+    }
+  }
+</style>
+</head>
 
 <body>
-  <textarea name="textarea" cols="80"rows="20">
-    本人abc同意并授权中国联通及其下属单位或者关联方，调取、查询、使用、分析、提供本人的包括但不限于我的地理位置、行为轨迹、设备位置等相关信息，这些信息仅在北京大学深圳研究生院研究团队作为个体出行数据采集志愿者服务期内方可获取。这些信息仅限于应用在城市居民移动行为相关项目研究中。采集期限为2023年9月1日至2023年12月31日，不在期间内的数据不会采集。中国联通依法对本人的相关信息承担保密责任，不得向授权相关方之外的个人或单位提供本人的数据及信息。在签署本协议之前，我已经充分知晓该项目情况，并对可能存在的潜在风险也已经充分了解，在此我同意免除联通及项目实施方非因故意行为所造成的一切责任。
-  </textarea>
+  <textarea name="textarea" readonly>
+  本人abc，手机号为123，同意并授权中国联通及其下属单位或者关联方，调取、查询、使用、分析、提供本人的包括但不限于我的地理位置、行为轨迹、设备位置等相关信息，这些信息仅在北京大学深圳研究生院研究团队作为个体出行数据采集志愿者服务期内方可获取。这些信息仅限于应用在城市居民移动行为相关项目研究中。采集期限为2023年9月1日至2023年12月31日，不在期间内的数据不会采集。中国联通依法对本人的相关信息承担保密责任，不得向授权相关方之外的个人或单位提供本人的数据及信息。在签署本协议之前，我已经充分知晓该项目情况，并对可能存在的潜在风险也已经充分了解，在此我同意免除联通及项目实施方非因故意行为所造成的一切责任。
+</textarea>
   <div class="left">
     <!-- <div id="startButton" class="button">Start</div> -->
     <button id="startButton">Start</button>
+    <button id="stopButton">Stop</button>
+    <a id="downloadButton" class="button">Download</a>
     <!-- <div class="video"><video id="preview" width="20%" height="auto" autoplay muted></video></div> -->
-    <div class="video"><video id="preview" width="30%" autoplay='autoplay' muted></video></div>
+    <div class="video"><video id="preview" autoplay='autoplay' muted></video></div>
+
   </div>
 
-  <div class="right">
-    <div class="rightBtn">
-      <!-- <div id="stopButton" class="button">Stop</div> -->
-      <button id="stopButton">Stop</button>
-      <!-- <button id="downloadButton">download</button> -->
-      <a id="downloadButton" class="button">Download</a>
-    </div>
-    <div class="video"><video id="recording" width="30%" controls></video></div>
+  <div class="video"><video id="recording" controls></video></div>
   </div>
 
   <script>
@@ -60,7 +138,12 @@
       // Save download video， click the download button， you can download it
       downloadButton.href = recording.src;
       downloadButton.download = "RecordedVideo.webm";
+
+      // Change start button back to original state
+      startButton.textContent = "Start"; // Reset the button text to "Start"
+      startButton.classList.remove("button-disabled"); // Remove the disabled class style
     });
+
 
     startButton.addEventListener("click", () => {
       // get the stream
@@ -79,11 +162,16 @@
           preview.captureStream =
             preview.captureStream || preview.mozCaptureStream;
           startRecording(preview.captureStream());
+
+          // Change start button appearance and text
+          startButton.textContent = "Recording..."; // Change the button text
+          startButton.classList.add("button-disabled"); // Add the disabled class style
         })
         .catch((err) => {
           console.log("recording error: ", err);
         });
     });
+
 
   </script>
 </body>
