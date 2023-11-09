@@ -39,7 +39,7 @@
     margin: 10px 0;
     resize: none;
     font-family: 'Microsoft YaHei', sans-serif;
-    font-size: 1.2rem;
+    font-size: 20px;
     /* Set the font to Microsoft YaHei, with a fallback to sans-serif */
   }
 
@@ -106,6 +106,8 @@
   <div class="video"><video id="recording" controls></video></div>
   </div>
 
+  // ...省略了部分样式和HTML，因为它们与问题无关...
+
   <script>
     let preview = document.getElementById("preview");
     let recording = document.getElementById("recording");
@@ -114,67 +116,73 @@
     let downloadButton = document.getElementById("downloadButton");
     let dataChunks = [];
     let recorder;
-
-    // 开始录制
-    function startRecording(stream, lengthInMS) {
-      recorder = new MediaRecorder(stream);
-
-      recorder.ondataavailable = (event) => {
-        let data = event.data;
-        dataChunks.push(data);
-      };
-      recorder.start(1000);
-      console.log(recorder.state + " start to recording .....");
+  
+    // Utility to handle different browser implementations
+    function setStreamSrc(videoElem, stream) {
+      if ("srcObject" in videoElem) {
+        videoElem.srcObject = stream;
+      } else {
+        // Older browsers may not have srcObject
+        videoElem.src = window.URL.createObjectURL(stream);
+      }
     }
-
-    stopButton.addEventListener("click", () => {
-      // close the recording
-      preview.srcObject.getTracks().forEach((track) => track.stop());
+  
+    // Starts recording
+    function startRecording(stream) {
+      try {
+        recorder = new MediaRecorder(stream);
+      } catch (e) {
+        console.error('MediaRecorder is not supported by this browser.\n\n' + e);
+        return;
+      }
+  
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          dataChunks.push(event.data);
+        }
+      };
+  
+      recorder.start(1000); // Collect 1000ms of data
+      console.log(recorder.state + " start to recording...");
+  
+      // Disable the start button
+      startButton.disabled = true;
+      stopButton.disabled = false;
+    }
+  
+    // Stop recording
+    function stopRecording() {
       recorder.stop();
-
-      // Play recorded video
+      // Enable the start button
+      startButton.disabled = false;
+      stopButton.disabled = true;
+  
+      // Assemble the chunks of data into a Blob
       let recordedBlob = new Blob(dataChunks, { type: "video/webm" });
-      recording.src = URL.createObjectURL(recordedBlob);
-
-      // Save download video， click the download button， you can download it
+      setStreamSrc(recording, URL.createObjectURL(recordedBlob));
+  
+      // Setup the download button
       downloadButton.href = recording.src;
       downloadButton.download = "RecordedVideo.webm";
-
-      // Change start button back to original state
-      startButton.textContent = "Start"; // Reset the button text to "Start"
-      startButton.classList.remove("button-disabled"); // Remove the disabled class style
-    });
-
-
+    }
+  
+    // Handle the start button click
     startButton.addEventListener("click", () => {
-      // get the stream
-      navigator.mediaDevices
-        .getUserMedia({
-          audio: true,
-          video: true,
-        })
+      navigator.mediaDevices.getUserMedia({ audio: true, video: true })
         .then((stream) => {
-          // set the stream to left video
-          preview.srcObject = stream;
-          // set the stream to <a> for download
-          downloadButton.href = stream;
-          // captureStream: which is streaming a real-time capture of the content being rendered in the media element. 
-          // A MediaStream object  which can be used as a source for audio or video data by other media
-          preview.captureStream =
-            preview.captureStream || preview.mozCaptureStream;
-          startRecording(preview.captureStream());
-
-          // Change start button appearance and text
-          startButton.textContent = "Recording..."; // Change the button text
-          startButton.classList.add("button-disabled"); // Add the disabled class style
+          setStreamSrc(preview, stream);
+          startRecording(stream);
         })
         .catch((err) => {
-          console.log("recording error: ", err);
+          console.error("Failed to start recording: ", err);
+          alert("Cannot access media devices: " + err.message);
         });
     });
-
-
+  
+    // Handle the stop button click
+    stopButton.addEventListener("click", stopRecording);
   </script>
+  
 </body>
 
 </html>
