@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>html5调用摄像头录制视频</title>
+</head>
+
+<body>
+  <textarea name="textarea" cols="80"rows="20">
+    本人abc同意并授权中国联通及其下属单位或者关联方，调取、查询、使用、分析、提供本人的包括但不限于我的地理位置、行为轨迹、设备位置等相关信息，这些信息仅在北京大学深圳研究生院研究团队作为个体出行数据采集志愿者服务期内方可获取。这些信息仅限于应用在城市居民移动行为相关项目研究中。采集期限为2023年9月1日至2023年12月31日，不在期间内的数据不会采集。中国联通依法对本人的相关信息承担保密责任，不得向授权相关方之外的个人或单位提供本人的数据及信息。在签署本协议之前，我已经充分知晓该项目情况，并对可能存在的潜在风险也已经充分了解，在此我同意免除联通及项目实施方非因故意行为所造成的一切责任。
+  </textarea>
+  <div class="left">
+    <!-- <div id="startButton" class="button">Start</div> -->
+    <button id="startButton">Start</button>
+    <!-- <div class="video"><video id="preview" width="20%" height="auto" autoplay muted></video></div> -->
+    <div class="video"><video id="preview" width="30%" autoplay='autoplay' muted></video></div>
+  </div>
+
+  <div class="right">
+    <div class="rightBtn">
+      <!-- <div id="stopButton" class="button">Stop</div> -->
+      <button id="stopButton">Stop</button>
+      <!-- <button id="downloadButton">download</button> -->
+      <a id="downloadButton" class="button">Download</a>
+    </div>
+    <div class="video"><video id="recording" width="30%" controls></video></div>
+  </div>
+
+  <script>
+    let preview = document.getElementById("preview");
+    let recording = document.getElementById("recording");
+    let startButton = document.getElementById("startButton");
+    let stopButton = document.getElementById("stopButton");
+    let downloadButton = document.getElementById("downloadButton");
+    let dataChunks = [];
+    let recorder;
+
+    // 开始录制
+    function startRecording(stream, lengthInMS) {
+      recorder = new MediaRecorder(stream);
+
+      recorder.ondataavailable = (event) => {
+        let data = event.data;
+        dataChunks.push(data);
+      };
+      recorder.start(1000);
+      console.log(recorder.state + " start to recording .....");
+    }
+
+    stopButton.addEventListener("click", () => {
+      // close the recording
+      preview.srcObject.getTracks().forEach((track) => track.stop());
+      recorder.stop();
+
+      // Play recorded video
+      let recordedBlob = new Blob(dataChunks, { type: "video/webm" });
+      recording.src = URL.createObjectURL(recordedBlob);
+
+      // Save download video， click the download button， you can download it
+      downloadButton.href = recording.src;
+      downloadButton.download = "RecordedVideo.webm";
+    });
+
+    startButton.addEventListener("click", () => {
+      // get the stream
+      navigator.mediaDevices
+        .getUserMedia({
+          audio: true,
+          video: true,
+        })
+        .then((stream) => {
+          // set the stream to left video
+          preview.srcObject = stream;
+          // set the stream to <a> for download
+          downloadButton.href = stream;
+          // captureStream: which is streaming a real-time capture of the content being rendered in the media element. 
+          // A MediaStream object  which can be used as a source for audio or video data by other media
+          preview.captureStream =
+            preview.captureStream || preview.mozCaptureStream;
+          startRecording(preview.captureStream());
+        })
+        .catch((err) => {
+          console.log("recording error: ", err);
+        });
+    });
+
+  </script>
+</body>
+
+</html>
