@@ -31,7 +31,7 @@
 
   textarea {
     width: 100%;
-    height: 250px;
+    height: 300px;
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
@@ -97,83 +97,79 @@
     <!-- <div id="startButton" class="button">Start</div> -->
     <button id="startButton">Start</button>
     <button id="stopButton">Stop</button>
-    <a id="downloadButton" class="button">Download</a>
-    <!-- <div class="video"><video id="preview" width="20%" height="auto" autoplay muted></video></div> -->
-    <div class="video"><video id="preview" autoplay='autoplay' muted></video></div>
-
-  </div>
-
-  <div class="video"><video id="recording" controls></video></div>
+    <a id="downloadButton" class="button" style="display:none;">Download</a>
+    <div class="video"><video id="preview" autoplay='autoplay' autoplay playsinline></video></div>
   </div>
 
   <script>
     let preview = document.getElementById("preview");
-    let recording = document.getElementById("recording");
     let startButton = document.getElementById("startButton");
     let stopButton = document.getElementById("stopButton");
     let downloadButton = document.getElementById("downloadButton");
     let dataChunks = [];
     let recorder;
-    
-    // 开始录制
-    function startRecording(stream, lengthInMS) {
+
+    function startRecording(stream) {
       recorder = new MediaRecorder(stream);
 
       recorder.ondataavailable = (event) => {
-        let data = event.data;
-        dataChunks.push(data);
+        if (event.data.size > 0) {
+          dataChunks.push(event.data);
+        }
       };
-      recorder.start(1000);
+
+      recorder.start();
       console.log(recorder.state + " start to recording .....");
     }
 
-    stopButton.addEventListener("click", () => {
-      // close the recording
-      preview.srcObject.getTracks().forEach((track) => track.stop());
-      recorder.stop();
-
-      // Play recorded video
-      let recordedBlob = new Blob(dataChunks, { type: "video/webm" });
-      recording.src = URL.createObjectURL(recordedBlob);
-
-      // Save download video， click the download button， you can download it
-      downloadButton.href = recording.src;
-      downloadButton.download = "RecordedVideo.webm";
-
-      // Change start button back to original state
-      startButton.textContent = "Start"; // Reset the button text to "Start"
-      startButton.classList.remove("button-disabled"); // Remove the disabled class style
-    });
-
+    // 初始加载时获取用户媒体
+    window.onload = () => {
+      if (navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(function (stream) {
+            preview.srcObject = stream;
+          })
+          .catch(function (error) {
+            console.error('Unable to access the camera/webcam.', error);
+          });
+      } else {
+        console.log('The getUserMedia API is not supported by your browser.');
+      }
+    };
 
     startButton.addEventListener("click", () => {
-      // get the stream
-      navigator.mediaDevices
-        .getUserMedia({
-          audio: true,
-          video: true,
-        })
-        .then((stream) => {
-          // set the stream to left video
-          preview.srcObject = stream;
-          // set the stream to <a> for download
-          downloadButton.href = stream;
-          // captureStream: which is streaming a real-time capture of the content being rendered in the media element. 
-          // A MediaStream object  which can be used as a source for audio or video data by other media
-          preview.captureStream =
-            preview.captureStream || preview.mozCaptureStream;
-          startRecording(preview.captureStream());
-
-          // Change start button appearance and text
-          startButton.textContent = "Recording..."; // Change the button text
-          startButton.classList.add("button-disabled"); // Add the disabled class style
-        })
-        .catch((err) => {
-          console.log("recording error: ", err);
-        });
+      if (!recorder || recorder.state == "inactive") {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            preview.srcObject = stream;
+            startRecording(stream);
+            startButton.textContent = "Recording...";
+            startButton.disabled = true;
+            stopButton.disabled = false;
+          })
+          .catch(error => {
+            console.error('Unable to access the camera/webcam.', error);
+          });
+      }
     });
 
+    stopButton.addEventListener("click", () => {
+      if (recorder) {
+        recorder.stop();
+        preview.srcObject.getTracks().forEach(track => track.stop());
+        startButton.textContent = "Start";
+        startButton.disabled = false;
+      }
 
+      // 一旦录制停止，创建一个视频blob并添加下载链接
+      recorder.onstop = (event) => {
+        let videoBlob = new Blob(dataChunks, { type: "video/webm" });
+        let videoUrl = URL.createObjectURL(videoBlob);
+        downloadButton.href = videoUrl;
+        downloadButton.download = "RecordedVideo.webm";
+        downloadButton.style.display = 'block';
+      };
+    });
   </script>
 </body>
 
