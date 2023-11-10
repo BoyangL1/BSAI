@@ -70,10 +70,9 @@
     /* Default cursor to indicate it's not clickable */
   }
 
-  a {
+  a{
     font-size: 50px;
   }
-
   /* Responsive styles */
   @media (max-width: 600px) {
     textarea {
@@ -164,36 +163,14 @@
         startButton.disabled = false;
       }
 
-      import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
-
-      const ffmpeg = createFFmpeg({ log: true });
-
-      recorder.onstop = async (event) => {
+      // 一旦录制停止，创建一个视频blob并添加下载链接
+      recorder.onstop = (event) => {
         let videoBlob = new Blob(dataChunks, { type: "video/webm" });
-
-        if (!ffmpeg.isLoaded()) {
-          await ffmpeg.load();
-        }
-
-        // Write the WebM video to the FFmpeg file system
-        ffmpeg.FS('writeFile', 'recording.webm', await fetchFile(videoBlob));
-
-        // Run the FFmpeg command to convert the video
-        await ffmpeg.run('-i', 'recording.webm', '-c', 'copy', 'recording.mp4');
-
-        // Read the resulting MP4 file from the FFmpeg file system
-        const mp4File = ffmpeg.FS('readFile', 'recording.mp4');
-
-        // Create a Blob URL from the MP4 file
-        const mp4Blob = new Blob([mp4File.buffer], { type: 'video/mp4' });
-        const mp4Url = URL.createObjectURL(mp4Blob);
-
-        // Set the download link
-        downloadButton.href = mp4Url;
-        downloadButton.download = 'RecordedVideo.mp4';
+        let videoUrl = URL.createObjectURL(videoBlob);
+        downloadButton.href = videoUrl;
+        downloadButton.download = "RecordedVideo.webm";
         downloadButton.style.display = 'block';
       };
-
     });
   </script>
 </body>
